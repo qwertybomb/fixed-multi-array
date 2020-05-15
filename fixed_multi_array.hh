@@ -1,7 +1,7 @@
 #pragma once
 #include <utility>
-#include<array>
 #include <initializer_list>
+#include <string>
 namespace turtle {
     template<typename T, size_t Size, size_t ... Sizes>
     class array {
@@ -18,15 +18,16 @@ namespace turtle {
             }
             return arg.first;
         }
-        template<typename Index, typename ... Indexs>
-        constexpr void get_index(size_t& final_index, const Index& index, const Indexs& ... indexs) const {
-            const size_t& dim_index = sizeof...(Indexs);
+        template<typename Index, typename ... Indices>
+        constexpr size_t get_index(const Index& index, const Indices& ... indices) const {
+            const size_t& dim_index = sizeof...(Indices);
             size_t new_index = index.second;
-            if constexpr (sizeof...(Indexs)) {
-                new_index *= multply_pair(indexs...);
-                get_index(final_index, indexs...);
+            size_t final_index = 0;
+            if constexpr (sizeof...(Indices)) {
+                new_index *= multply_pair(indices...);
+                return get_index(indices...) + new_index;
             }
-            final_index += new_index;
+            return final_index + new_index;
         }
     public:
         using value_type = T;
@@ -45,18 +46,13 @@ namespace turtle {
         constexpr const_reference at(size_type pos) const { return data_[pos]; }
         constexpr reference operator[](size_type pos) { return data_[pos]; }
         constexpr const_reference operator[](size_type pos) const { return data_[pos]; }
-        template<typename Index, typename ... Indexs>
-        constexpr reference operator ()(const Index& index, const Indexs& ... indexs) {
-            size_t final_index = 0;
-            get_index(final_index, std::pair<size_type, size_type>(Size, index), std::pair<size_type, size_type>(Sizes, indexs)...);
-            return data_[final_index];
+        template<typename Index, typename ... Indices>
+        constexpr reference operator ()(const Index& index, const Indices& ... indices) {
+            return data_[this->index(index, indices...)];
         }
-
-        template<typename Index, typename ... Indexs>
-        constexpr size_type index(const Index& index, const Indexs& ... indexs) {
-            size_t final_index = 0;
-            get_index(final_index, std::pair<size_type, size_type>(Size, index), std::pair<size_type, size_type>(Sizes, indexs)...);
-            return final_index;
+        template<typename Index, typename ... Indices>
+        constexpr size_type index(const Index& index, const Indices& ... indices) {
+            return get_index(std::pair<size_type, size_type>(Size, index), std::pair<size_type, size_type>(Sizes, indices)...);
         }
         constexpr reference front() { return data_[0]; }
         constexpr const_reference front() const { return data[0]; }
