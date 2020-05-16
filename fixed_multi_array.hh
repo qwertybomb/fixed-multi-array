@@ -14,24 +14,6 @@ namespace turtle {
         static constexpr auto multply(const Args& ... args) {
             return (args * ...);
         }
-        template<typename Arg, typename ... Args>
-        static constexpr size_t multply_pair(const Arg& arg, const Args& ... args) {
-            if constexpr (sizeof...(args) > 0) {
-                size_t remainder = multply_pair(args...);
-                return arg.first * remainder;
-            }
-            return arg.first;
-        }
-        template<typename Index, typename ... Indices>
-        constexpr size_t get_index(const Index& index, const Indices& ... indices) const {
-            size_t new_index = index.second;
-            size_t final_index = 0;
-            if constexpr (sizeof...(Indices)) {
-                new_index *= multply_pair(indices...);
-                return get_index(indices...) + new_index;
-            }
-            return final_index + new_index;
-        }
     public:
         using value_type = T;
         using size_type = size_t;
@@ -91,6 +73,25 @@ namespace turtle {
         }
         T data_[size_];
         #undef size_ 
+        private:
+        template<typename Arg, typename ... Args>
+        static constexpr size_type multply_pair(const Arg& arg, const Args& ... args) {
+            if constexpr (sizeof...(args) > 0) {
+                size_type remainder = multply_pair(args...);
+                return arg.first * remainder;
+            }
+            return arg.first;
+        }
+        template<typename Index, typename ... Indices>
+        constexpr size_type get_index(const Index& index, const Indices& ... indices) const {
+            size_type new_index = index.second;
+            size_type final_index = 0;
+            if constexpr (sizeof...(Indices)) {
+                new_index *= multply_pair(indices...);
+                return get_index(indices...) + new_index;
+            }
+            return final_index + new_index;
+        }
     };
 }
 template<typename T, size_t Size, size_t ... Sizes>
