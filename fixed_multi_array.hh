@@ -11,9 +11,7 @@ namespace turtle {
     #endif
     class array {
         template<typename ... Args>
-        static constexpr auto multply(const Args& ... args) {
-            return (args * ...);
-        }
+        static constexpr auto multply(const Args& ... args) {return (args * ...);}
         constexpr static size_t size_ =  multply(Size, Sizes...);
     public:
         using value_type = T;
@@ -74,8 +72,6 @@ namespace turtle {
             }
         }
         T data_[size_];
-        //Comparisons
-        constexpr auto operator<=>(const array<T,Size,Sizes...>& rhs) const = default;
         private:
         //Helper functions
         template<typename Arg, typename ... Args>
