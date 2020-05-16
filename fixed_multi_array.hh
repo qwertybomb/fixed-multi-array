@@ -1,7 +1,6 @@
 #pragma once
 #include <utility>
 #include <initializer_list>
-#include <string>
 namespace turtle {
     template<typename T, size_t Size, size_t ... Sizes>
     class array {
