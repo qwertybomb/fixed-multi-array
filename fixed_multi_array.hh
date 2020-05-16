@@ -40,6 +40,7 @@ namespace turtle {
         constexpr size_type index(const Index& index, const Indices& ... indices) {
             static_assert (sizeof...(Indices) >= sizeof...(Sizes),"not enough parameters");
             static_assert (sizeof...(Indices) <= sizeof...(Sizes),"too many parameters");
+            //x + (y*i) + (z*i*j) + (w*i*j*k) ...
             return get_index(std::pair<size_type, size_type>(Size, index), std::pair<size_type, size_type>(Sizes, indices)...);
         }
         constexpr reference front() { return data_[0]; }
