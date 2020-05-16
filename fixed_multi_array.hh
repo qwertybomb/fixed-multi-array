@@ -74,7 +74,10 @@ namespace turtle {
             }
         }
         T data_[size_];
+        //Comparisons
+        constexpr auto operator<=>(const array<T,Size,Sizes...>& rhs) const = default;
         private:
+        //Helper functions
         template<typename Arg, typename ... Args>
         static constexpr size_type multply_pair(const Arg& arg, const Args& ... args) {
             if constexpr (sizeof...(args) > 0) {
@@ -93,6 +96,7 @@ namespace turtle {
             }
             return final_index + new_index;
         }
+
     };
     //Comparisons
     template<typename T, size_t Size, size_t ... Sizes>
@@ -103,7 +107,7 @@ namespace turtle {
        }
        return true;
     }
-}
+} //namespace turtle
 template<typename T, size_t Size, size_t ... Sizes>
 using fixed_multi_array = turtle::array<T,Size,Sizes...>;
 
