@@ -94,6 +94,7 @@ namespace turtle {
             return final_index + new_index;
         }
     };
+    //Comparisons
     template<typename T, size_t Size, size_t ... Sizes>
     constexpr inline bool operator==(const array<T,Size,Sizes...>& one, const array<T,Size,Sizes...>& two){
        auto first1 = one.begin(), first2 = two.begin();
