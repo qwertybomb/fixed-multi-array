@@ -1,9 +1,13 @@
 #pragma once
+#include <cstddef>
 #include <utility>
 #include <initializer_list>
-#include <string>
+#include <limits>
 namespace turtle {
     template<typename T, size_t Size, size_t ... Sizes>
+    #if __cplusplus > 201709L
+    requires (Size != 0) && ((Sizes != 0) && ... && true) //prevent any size parameters from being zero
+    #endif
     class array {
         #define size_ (multply(Size, Sizes...))
         template<typename ... Args>
@@ -20,7 +24,6 @@ namespace turtle {
         }
         template<typename Index, typename ... Indices>
         constexpr size_t get_index(const Index& index, const Indices& ... indices) const {
-            const size_t& dim_index = sizeof...(Indices);
             size_t new_index = index.second;
             size_t final_index = 0;
             if constexpr (sizeof...(Indices)) {
@@ -52,12 +55,14 @@ namespace turtle {
         }
         template<typename Index, typename ... Indices>
         constexpr size_type index(const Index& index, const Indices& ... indices) {
+            static_assert (sizeof...(Indices) >= sizeof...(Sizes),"not enough parameters");
+            static_assert (sizeof...(Indices) <= sizeof...(Sizes),"too many parameters");
             return get_index(std::pair<size_type, size_type>(Size, index), std::pair<size_type, size_type>(Sizes, indices)...);
         }
         constexpr reference front() { return data_[0]; }
-        constexpr const_reference front() const { return data[0]; }
+        constexpr const_reference front() const { return front(); }
         constexpr reference back() { return data_[size_ - 1]; }
-        constexpr const_reference back() const { return data[size_ - 1]; }
+        constexpr const_reference back() const { return back(); }
         constexpr T* data() noexcept { return data_; }
         constexpr const T* data() const noexcept { return data_; }
         //Iterators
