@@ -1,6 +1,7 @@
 #pragma once
 #include <cstddef>
 #include <utility>
+#include <array>
 #include <initializer_list>
 #include <limits>
 namespace turtle {
@@ -9,11 +10,11 @@ namespace turtle {
     requires (Size != 0) && ((Sizes != 0) && ... && true) //prevent any size parameters from being zero
     #endif
     class array {
-        #define size_ (multply(Size, Sizes...))
         template<typename ... Args>
         static constexpr auto multply(const Args& ... args) {
             return (args * ...);
         }
+        constexpr static size_t size_ =  multply(Size, Sizes...);
     public:
         using value_type = T;
         using size_type = size_t;
@@ -72,7 +73,6 @@ namespace turtle {
             }
         }
         T data_[size_];
-        #undef size_ 
         private:
         template<typename Arg, typename ... Args>
         static constexpr size_type multply_pair(const Arg& arg, const Args& ... args) {
@@ -93,6 +93,14 @@ namespace turtle {
             return final_index + new_index;
         }
     };
+    template<typename T, size_t Size, size_t ... Sizes>
+    inline bool operator==(const array<T,Size,Sizes...>& one, const array<T,Size,Sizes...>& two){
+       auto first1 = one.first, first2 = two.first;
+       for(;first1!=one.last;first1++,first2++){
+           if(first2!=first2) return false;
+       }
+       return true;
+    }
 }
 template<typename T, size_t Size, size_t ... Sizes>
 using fixed_multi_array = turtle::array<T,Size,Sizes...>;
