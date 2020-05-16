@@ -94,10 +94,10 @@ namespace turtle {
         }
     };
     template<typename T, size_t Size, size_t ... Sizes>
-    inline bool operator==(const array<T,Size,Sizes...>& one, const array<T,Size,Sizes...>& two){
-       auto first1 = one.first, first2 = two.first;
-       for(;first1!=one.last;first1++,first2++){
-           if(first2!=first2) return false;
+    constexpr inline bool operator==(const array<T,Size,Sizes...>& one, const array<T,Size,Sizes...>& two){
+       auto first1 = one.begin(), first2 = two.begin();
+       for(;first1!=one.end();first1++,first2++){
+           if(*first1!=*first2) return false;
        }
        return true;
     }
