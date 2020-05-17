@@ -1,10 +1,10 @@
 #pragma once
 #include <cstddef>
 #include <utility>
-#include <tuple>
-#include <array>
 #include <initializer_list>
 #include <limits>
+#include <cstring>
+#include <iostream>
 template<typename T, size_t Size, size_t ... Sizes>
 class sub_array;
 namespace turtle {
@@ -17,7 +17,6 @@ namespace turtle {
         template<typename ... Args>
         static constexpr auto multply(const Args& ... args) {return (args * ...);}
         constexpr static size_t size_ =  multply(Size, Sizes...);
-        constexpr static std::tuple<size_t,decltype(Sizes)...> sizes = std::make_tuple(Size,Sizes...);
         public:
         using value_type = T;
         using size_type = size_t;
@@ -29,73 +28,22 @@ namespace turtle {
 
         using iterator = T*;
         using const_iterator = const T*;
-
-        template<typename U, size_t Size_, size_t ... Sizes_>
-        class sub_array : public array<T,Size_, Sizes_...> {
-        public:
-           T* data__;
-           sub_array(T* data):data__(data){}
-           //Element access
-           constexpr reference at(size_type pos) { return data__[pos]; }
-           constexpr const_reference at(size_type pos) const { return data__[pos]; }
-           constexpr sub_array<T, Sizes_...>  operator[](size_type pos) {
-           sub_array<T, Sizes_...> temp (data__+pos*multply(Sizes_...));
-           return  temp;
-           }
-           constexpr const sub_array<T,Sizes_...>& operator[](size_type pos) const {return (*this)[pos];}
-           template<typename Index, typename ... Indices>
-           constexpr size_type index(const Index& index, const Indices& ... indices) {
-               static_assert (sizeof...(Indices) >= sizeof...(Sizes_),"not enough parameters");
-               static_assert (sizeof...(Indices) <= sizeof...(Sizes_),"too many parameters");
-               //x + (y*i) + (z*i*j) + (w*i*j*k) ...
-               return get_index(std::pair<size_type, size_type>(Size_, index), std::pair<size_type, size_type>(Sizes_, indices)...);
-           }
-           constexpr reference front() { return data__[0]; }
-           constexpr const_reference front() const { return this->front(); }
-           constexpr reference back() { return data__[this->size_ - 1]; }
-           constexpr const_reference back() const { return this->back(); }
-           constexpr T* data() noexcept { return data__; }
-           constexpr const T* data() const noexcept { return data__; }
-           //Iterators
-           constexpr iterator begin() noexcept { return data__; }
-           constexpr iterator end() noexcept { return data__ + this->size_; }
-           constexpr const_iterator begin() const noexcept { return data__; }
-           constexpr const_iterator end() const noexcept { return data__ + this->size_; }
-           constexpr iterator cbegin() const noexcept { return data__; }
-           constexpr iterator cend() const noexcept { return data__ + this->size_; }
-           //Capacity
-           constexpr size_type size() const noexcept { return  this->size_; }
-           constexpr bool empty() const noexcept { return this->begin() == this->begin(); }
-           constexpr size_type max_size() const noexcept { return std::numeric_limits<size_type>::max() / sizeof(T); }
-           //Operations
-           constexpr void fill(const T& value) {
-               std::fill(begin(),end(), value);
-           }
-           constexpr void swap(sub_array other) const noexcept(noexcept(std::swap(std::declval<value_type&>(), std::declval<value_type&>()))) {
-               /*from swap_ranges*/
-               iterator first1 = data__;
-               iterator first2 = other.data__;
-               while (first1 != end()) {
-                   std::swap(*first1, *first2);
-                   ++first1; ++first2;
-               }
-           }
-        };
-        template<typename U, size_t Size_>
-        class sub_array<U,Size_> : public sub_array<T,Size_, 1> {
-        public:
-           //Element access
-           constexpr reference operator[](size_type pos) {return  this->data__[pos];}
-        };
+        array(std::initializer_list<T> list,T* ptr = reinterpret_cast<T*>(alloca(sizeof(T)*size_))) : data_(ptr) {
+            std::copy(list.begin(),list.end(),data_);
+        }
+        array(const array& other,T* ptr = reinterpret_cast<T*>(alloca(sizeof(T)*size_))) : data_(ptr) {
+             std::memcpy(data_,other.begin(),sizeof(T)*size_);
+        }
+        array(T* ptr = reinterpret_cast<T*>(alloca(sizeof(T)*size_))) : data_{ptr} {};
         ~array() = default;
         //Element access
         constexpr reference at(size_type pos) { return data_[pos]; }
         constexpr const_reference at(size_type pos) const { return data_[pos]; }
-        constexpr sub_array<T,Sizes...> operator[](size_type pos) {
-            auto temp = sub_array<T,Sizes...>(&data_[pos*multply(Sizes...)]);
+        constexpr array<T,Sizes...> operator[](size_type pos) {
+            auto temp = array<T,Sizes...>(data_ +  multply(pos,Sizes...));
             return temp;
         }
-        constexpr const sub_array<T,Sizes...>& operator[](size_type pos) const {return (*this)[pos];}
+        constexpr const array<T,Sizes...>& operator[](size_type pos) const {return (*this)[pos];}
         template<typename Index, typename ... Indices>
         constexpr size_type index(const Index& index, const Indices& ... indices) {
             static_assert (sizeof...(Indices) >= sizeof...(Sizes),"not enough parameters");
@@ -108,14 +56,14 @@ namespace turtle {
         constexpr reference back() { return data_[size_ - 1]; }
         constexpr const_reference back() const { return back(); }
         constexpr T* data() noexcept { return data_; }
-        constexpr const T* data() const noexcept { return data_; }
+        constexpr const T* data() const noexcept { return data(); }
         //Iterators
         constexpr iterator begin() noexcept { return data_; }
-        constexpr iterator end() noexcept { return data_ + size_; }
+        constexpr iterator end() noexcept { return begin() + size_; }
         constexpr const_iterator begin() const noexcept { return data_; }
-        constexpr const_iterator end() const noexcept { return data_ + size_; }
-        constexpr iterator cbegin() const noexcept { return data_; }
-        constexpr iterator cend() const noexcept { return data_ + size_; }
+        constexpr const_iterator end() const noexcept { return begin() + size_; }
+        constexpr iterator cbegin() const noexcept { return begin(); }
+        constexpr iterator cend() const noexcept { return begin() + size_; }
         //Capacity
         constexpr size_type size() const noexcept { return size_; }
         constexpr bool empty() const noexcept { return begin() == end(); }
@@ -126,14 +74,14 @@ namespace turtle {
         }
         constexpr void swap(array other)  noexcept(noexcept(std::swap(std::declval<value_type&>(), std::declval<value_type&>()))) {
             /*from swap_ranges*/
-            iterator first1 = data_;
-            iterator first2 = other.data_;
+            iterator first1 = data();
+            iterator first2 = other.data();
             while (first1 != end()) {
                 std::swap(*first1, *first2);
                 ++first1; ++first2;
             }
         }
-        T data_[size_];
+        T* data_;
         private:
         //Helper functions
         template<typename Arg, typename ... Args>
@@ -154,8 +102,8 @@ namespace turtle {
             }
             return final_index + new_index;
         }
-
     };
+
     //Comparisons
     template<typename T, size_t Size, size_t ... Sizes>
     constexpr inline bool operator==(const array<T,Size,Sizes...>& one, const array<T,Size,Sizes...>& two){
@@ -170,6 +118,7 @@ namespace turtle {
     requires (Size != 0) //prevent any size parameters from being zero
     #endif
     class array<T,Size> : public array<T,Size,1> {
+        constexpr static size_t size__ =  Size;
         public:
         using value_type = T;
         using size_type = size_t;
@@ -180,6 +129,18 @@ namespace turtle {
         using const_reference = const T&;
         using iterator = T*;
         using const_iterator = const T*;
+
+        array(std::initializer_list<T> list,T* ptr = reinterpret_cast<T*>(alloca(sizeof(T)*size__))) {
+           this->data_ = ptr;
+           std::copy(list.begin(),list.end(),this->data_);
+        }
+        array(const array& other,T* ptr = reinterpret_cast<T*>(alloca(sizeof(T)*size__))) {
+             this->data_ = ptr;
+             std::memcpy(this->data_,other.begin(),sizeof(T)*size__);
+        }
+        array(T* ptr = reinterpret_cast<T*>(alloca(sizeof(T)*size__)  ) ) {this->data_=ptr;}
+        ~array() = default;
+
 
         constexpr reference operator[](size_type pos) {return this->data_[pos];}
         constexpr const_reference operator[](size_type pos) const {return (*this)[pos];}
