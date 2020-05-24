@@ -5,17 +5,25 @@
 #include <limits>
 #include <cstring>
 #include <iostream>
+
 namespace turtle {
-    template<typename T, size_t Size, size_t ... Sizes>
-#if __cplusplus > 201709L
+ 
+    template<typename T, size_t Size,size_t ... Sizes>
+#if __cplusplus >= 201709L
     requires (Size != 0) && ((Sizes != 0) && ... && true) //prevent any size parameters from being zero
 #endif
         class array {
         protected:
             template<typename ... Args>
             static constexpr auto multply(const Args& ... args) { return (args * ...); }
-            constexpr static size_t size_ = multply(Size, Sizes...);
-            //friend class turtle::array<T,Size>;
+            template<size_t arg>
+            constexpr static auto make_positive() {
+                if constexpr (arg == -1) {return 1;}
+                else { return arg;}
+            }
+            constexpr static size_t size_ = multply(Size, make_positive<Sizes>()...);
+            constexpr static bool no_array = ((Sizes == -1) || ... || false);
+            constexpr static bool is_1d_array_ = !sizeof...(Sizes) ||  ((Sizes == -1) && ... && true);
         public:
             using value_type = T;
             using size_type = size_t;
@@ -37,9 +45,9 @@ namespace turtle {
             constexpr reference at(size_type pos) { return data_[pos]; }
             constexpr const_reference at(size_type pos) const { return data_[pos]; }
             constexpr decltype(auto) operator[](size_type pos) {
-                if constexpr (sizeof...(Sizes)) {
-                    auto temp = array<T, Sizes...>();
-                    temp.data_ = data_ + multply(pos, Sizes...);
+                if constexpr (!is_1d_array_) {
+                    auto temp = array<T, Sizes...,-1>();
+                    temp.data_ = data_ + multply(pos, make_positive<Sizes>()...);
                     return temp;
                 }
                 else {
@@ -92,8 +100,8 @@ namespace turtle {
                     ++first1; ++first2;
                 }
             }
-            T data_array[size_];
-            T* data_ = &data_array[0];
+            T data_array[no_array ? 1 : size_];
+            T* data_ = data_array;
         private:
             //Helper functions
             template<typename Index, typename ... Indices>
@@ -101,7 +109,7 @@ namespace turtle {
                 size_type new_index = index.second;
                 size_type final_index = 0;
                 if constexpr (sizeof...(Indices)) {
-                    new_index *= multply(std::get<0>(indices)...);
+                    new_index *= multply(indices.first...);
                     return get_index(indices...) + new_index;
                 }
                 return final_index + new_index;
