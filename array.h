@@ -7,23 +7,16 @@
 #include <iostream>
 
 namespace turtle {
- 
-    template<typename T, size_t Size,size_t ... Sizes>
-#if __cplusplus >= 201709L
+    template<typename T, typename Dim, bool opt = false>
+    class array;
+    template<typename T, template<size_t, size_t...> typename dim,size_t Size, size_t... Sizes, bool opt>
+#if __cplusplus > 201709L
     requires (Size != 0) && ((Sizes != 0) && ... && true) //prevent any size parameters from being zero
 #endif
-        class array {
-        protected:
+        class array<T,dim<Size,Sizes...>,opt> {
             template<typename ... Args>
             static constexpr auto multply(const Args& ... args) { return (args * ...); }
-            template<size_t arg>
-            constexpr static auto make_positive() {
-                if constexpr (arg == -1) {return 1;}
-                else { return arg;}
-            }
-            constexpr static size_t size_ = multply(Size, make_positive<Sizes>()...);
-            constexpr static bool no_array = ((Sizes == -1) || ... || false);
-            constexpr static bool is_1d_array_ = !sizeof...(Sizes) ||  ((Sizes == -1) && ... && true);
+            constexpr static size_t size_ = multply(Size,Sizes...);
         public:
             using value_type = T;
             using size_type = size_t;
@@ -44,17 +37,17 @@ namespace turtle {
             //Element access
             constexpr reference at(size_type pos) { return data_[pos]; }
             constexpr const_reference at(size_type pos) const { return data_[pos]; }
-            constexpr decltype(auto) operator[](size_type pos) {
-                if constexpr (!is_1d_array_) {
-                    auto temp = array<T, Sizes...,-1>();
-                    temp.data_ = data_ + multply(pos, make_positive<Sizes>()...);
+            constexpr decltype(auto) operator[](const size_type& pos) {
+                if constexpr (sizeof...(Sizes)) {
+                    auto temp = array<T, dim<Sizes...>,true>();
+                    temp.data_ = data_ + multply(pos, Sizes...);
                     return temp;
                 }
                 else {
                     return data_at(pos);
                 }
             }
-            constexpr const auto& operator[](size_type pos) const { return (*this)[pos]; }
+            constexpr const auto& operator[](const size_type& pos) const { return (*this)[pos]; }
             template<typename Index, typename ... Indices>
             constexpr reference operator ()(const Index& index, const Indices& ... indices) {
                 return data_[this->index(index, indices...)];
@@ -100,7 +93,7 @@ namespace turtle {
                     ++first1; ++first2;
                 }
             }
-            T data_array[no_array ? 1 : size_];
+            T data_array[opt ? 1 : size_];
             T* data_ = data_array;
         private:
             //Helper functions
@@ -126,8 +119,8 @@ namespace turtle {
     };
 
     //Comparisons
-    template<typename T, size_t Size, size_t ... Sizes>
-    constexpr inline bool operator==(const array<T, Size, Sizes...>& one, const array<T, Size, Sizes...>& two) {
+    template<typename T, template<size_t, size_t...> typename dim, size_t Size, size_t... Sizes>
+    constexpr inline bool operator==(const array<T,dim<Size,Sizes...>>& one, const array<T,dim<Size,Sizes...>>& two) {
         auto first1 = one.begin(), first2 = two.begin();
         for (; first1 != one.end(); first1++, first2++) {
             if (*first1 != *first2) return false;
@@ -135,5 +128,5 @@ namespace turtle {
         return true;
     }
 } //namespace turtle
-template<typename T, size_t Size, size_t ... Sizes>
-using fixed_multi_array = turtle::array<T, Size, Sizes...>;
+template<size_t, size_t...>
+struct Size;
